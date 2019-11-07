@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from "react";
+import "@material/radio/dist/mdc.radio.css";
+import "@material/form-field/dist/mdc.form-field.css";
+import { Radio } from "@rmwc/radio";
 import "@material/slider/dist/mdc.slider.css";
 import { Slider } from "@rmwc/slider";
+import {
+  createSmallCanvas,
+  createDotCanvas,
+  createDotData,
+  drawCanvas,
+  createSheetData
+} from "./helpers";
+import Counter from "./Counter";
 
 const App = () => {
+  const [showSheets, setShowSheets] = useState(true);
   const [sourceImg, setSourceImg] = useState(null);
-  const [pixelSize, setPixelSize] = useState(10);
+  const [currentSheetIndex, setCurrentSheetIndex] = useState(0);
+  const [totalSheets, setTotalSheets] = useState(0);
+  const [pixelSizeInMm, setPixelSizeInMm] = useState(10);
   const [totalDotSizes, setTotalDotSizes] = useState(16);
-  const [totalPixels, setTotalPixels] = useState(100);
+  const [totalPixels, setTotalPixels] = useState(32);
   const [dotSizeMutliplier, setDotSizeMutliplier] = useState(1.3);
   const canvasRef = React.useRef(null);
 
@@ -21,48 +35,97 @@ const App = () => {
     }
 
     if (sourceImg) {
-      const smallCanvas = createSmallCanvas(
+      const sourcePixelCanvas = createSmallCanvas(
         sourceImg,
         totalPixels,
         totalPixels
       );
 
-      const dotData = createDotData({
-        inputCanvas: smallCanvas,
+      let dotData = createDotData({
+        sourcePixelCanvas,
         totalDotSizes
       });
 
-      const dotCanvas = createDotCanvas({
-        dotData,
-        pixelSize: pixelSize,
-        inputCanvas: smallCanvas,
-        dotSizeMutliplier
-      });
+      let canvasToshow;
+
+      if (showSheets) {
+        const sheetData = createSheetData({ dotData, pixelSizeInMm });
+        const sheet = sheetData.sheets[currentSheetIndex];
+        setTotalSheets(sheetData.sheets.length - 1);
+
+        console.log("sheetData: ", sheetData);
+
+        canvasToshow = createDotCanvas({
+          dots: sheet.sheetDots,
+          dotsWide: sheetData.pixelsPerSheetWidth,
+          dotsHigh: sheetData.pixelsPerSheetHeight,
+          pixelSizeInMm,
+          dotSizeMutliplier
+        });
+      } else {
+        canvasToshow = createDotCanvas({
+          dots: dotData.dots,
+          dotsWide: dotData.dotsWide,
+          dotsHigh: dotData.dotsHigh,
+          pixelSizeInMm,
+          dotSizeMutliplier
+        });
+      }
 
       const ctx = canvasRef.current.getContext("2d");
-      canvasRef.current.width = dotCanvas.width;
-      canvasRef.current.height = dotCanvas.height;
-      drawCanvas(ctx, dotCanvas);
+      canvasRef.current.width = canvasToshow.width;
+      canvasRef.current.height = canvasToshow.height;
+      drawCanvas(ctx, canvasToshow);
 
       // updates slider layout - probably should be delayed until after canvas drawn
       window.dispatchEvent(new Event("resize"));
     }
-  });
+  }, [
+    showSheets,
+    sourceImg,
+    currentSheetIndex,
+    pixelSizeInMm,
+    totalDotSizes,
+    totalPixels,
+    dotSizeMutliplier
+  ]);
 
   return (
     <div style={{ display: "flex" }}>
       <div style={{ padding: "10px 20px", flex: 1, minWidth: 500 }}>
         <div>
-          DOT SIZE: {pixelSize}
+          <Radio checked={showSheets} onChange={e => setShowSheets(true)}>
+            Show sheets
+          </Radio>
+          <Radio checked={!showSheets} onChange={e => setShowSheets(false)}>
+            Show full image
+          </Radio>
+        </div>
+
+        {showSheets && (
+          <div>
+            CURRENT SHEET:
+            <Counter
+              value={currentSheetIndex}
+              setValue={setCurrentSheetIndex}
+              min={0}
+              max={totalSheets}
+            />
+          </div>
+        )}
+
+        <div>
+          PIXEL SIZE: {pixelSizeInMm}mm
           <Slider
-            value={pixelSize}
+            value={pixelSizeInMm}
             min={1}
             max={60}
             discrete
             step={1}
-            onInput={evt => setPixelSize(evt.detail.value)}
+            onInput={evt => setPixelSizeInMm(evt.detail.value)}
           />
         </div>
+
         <div>
           SMALL CANVAS SIZE: {totalPixels}
           <Slider
@@ -74,6 +137,7 @@ const App = () => {
             onInput={evt => setTotalPixels(evt.detail.value)}
           />
         </div>
+
         <div>
           TOTAL DOT SIZES: {totalDotSizes}
           <Slider
@@ -85,6 +149,7 @@ const App = () => {
             onInput={evt => setTotalDotSizes(evt.detail.value)}
           />
         </div>
+
         <div>
           DOT SIZE MULTIPLIER: {dotSizeMutliplier}
           <div>
@@ -109,143 +174,3 @@ const App = () => {
 };
 
 export default App;
-
-const drawCanvas = (ctx, source) => {
-  ctx.drawImage(source, 0, 0);
-};
-
-const createSmallCanvas = (source, maxWidth, maxHeight) => {
-  const sourceW = source.width;
-  const sourceH = source.height;
-
-  const wToHRatio = sourceH / sourceW;
-  const hToWRatio = sourceW / sourceH;
-
-  // allow maxHeight or maxWidth to be null
-  if (!maxWidth) maxWidth = source.width;
-  if (!maxHeight) maxHeight = source.height;
-
-  let targetW = maxWidth;
-  let targetH = targetW * wToHRatio;
-
-  if (sourceH > maxHeight) {
-    targetH = maxHeight;
-    targetW = targetH * hToWRatio;
-  }
-
-  const smallCanvas = document.createElement("canvas");
-  const ctx = smallCanvas.getContext("2d");
-  smallCanvas.width = targetW;
-  smallCanvas.height = targetH;
-
-  ctx.drawImage(source, 0, 0, sourceW, sourceH, 0, 0, targetW, targetH);
-
-  return smallCanvas;
-};
-
-const createDotCanvas = ({
-  dotData,
-  pixelSize,
-  inputCanvas,
-  dotSizeMutliplier
-}) => {
-  const { width: inputW, height: inputH } = inputCanvas;
-
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * pixelSize;
-  outputCanvas.height = inputH * pixelSize;
-  const outputCtx = outputCanvas.getContext("2d");
-
-  const halfPixelSize = pixelSize / 2;
-
-  dotData.forEach(dot => {
-    const x = dot.xIndex * pixelSize + halfPixelSize;
-    const y = dot.yIndex * pixelSize + halfPixelSize;
-
-    drawDot({
-      pixelSize,
-      x,
-      y,
-      fractionSize: dot.fractionSize,
-      context: outputCtx,
-      dotSizeMutliplier
-    });
-  });
-
-  return outputCanvas;
-};
-
-const drawDot = ({
-  pixelSize,
-  x,
-  y,
-  fractionSize,
-  context,
-  dotSizeMutliplier
-}) => {
-  let bgColour, dotColour;
-
-  bgColour = "#FFF";
-  dotColour = "#000";
-
-  let dotSize = pixelSize * fractionSize * dotSizeMutliplier;
-
-  // draw background
-  context.fillStyle = bgColour;
-  context.beginPath();
-  context.rect(x, y, pixelSize, pixelSize);
-  context.fill();
-  const halfDotSize = dotSize * 0.5;
-
-  context.fillStyle = dotColour;
-  context.beginPath();
-  context.arc(x, y, halfDotSize, 0, 2 * Math.PI);
-  context.fill();
-};
-
-const getFractionBand = (totalFactions = 10) => {
-  return 1 / totalFactions;
-};
-
-const getRestrictedValue = (value, fractionBandSize) => {
-  return Math.round(value / fractionBandSize) * fractionBandSize;
-};
-
-const createDotData = ({ inputCanvas, totalDotSizes = 255 }) => {
-  const { width: inputW, height: inputH } = inputCanvas;
-
-  const fractionBandSize = getFractionBand(totalDotSizes);
-
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixels = imgData.data;
-
-  const dotData = [];
-
-  for (let y = 0; y < inputH; y++) {
-    for (let x = 0; x < inputW; x++) {
-      const i = (y * inputW + x) * 4;
-
-      const r = pixels[i];
-      const g = pixels[i + 1];
-      const b = pixels[i + 2];
-
-      //grey = (r + g + b) / 3;
-      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-      const rawFractionSize = 1 - brightness / 255;
-      const fractionSize = getRestrictedValue(
-        rawFractionSize,
-        fractionBandSize
-      );
-
-      dotData.push({
-        fractionSize,
-        xIndex: x,
-        yIndex: y
-      });
-    }
-  }
-
-  return dotData;
-};
