@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "@material/slider/dist/mdc.slider.css";
 import { Slider } from "@rmwc/slider";
-import "@material/radio/dist/mdc.radio.css";
-import "@material/form-field/dist/mdc.form-field.css";
-import { Radio } from "@rmwc/radio";
-
-const DOT_TYPES = ["round", "square", "triangle", "triangle2", "ring"];
-const DOT_COLOUR_OPTIONS = [
-  "black-on-white",
-  "grey-on-white",
-  "white-on-black",
-  "random-on-white"
-];
 
 const App = () => {
   const [sourceImg, setSourceImg] = useState(null);
@@ -19,7 +8,6 @@ const App = () => {
   const [totalDotSizes, setTotalDotSizes] = useState(16);
   const [totalPixels, setTotalPixels] = useState(100);
   const [dotSizeMutliplier, setDotSizeMutliplier] = useState(1.3);
-  const [dotType, setDotType] = useState(DOT_TYPES[0]);
   const canvasRef = React.useRef(null);
 
   useEffect(() => {
@@ -55,25 +43,15 @@ const App = () => {
       canvasRef.current.width = dotCanvas.width;
       canvasRef.current.height = dotCanvas.height;
       drawCanvas(ctx, dotCanvas);
+
+      // updates slider layout - probably should be delayed until after canvas drawn
+      window.dispatchEvent(new Event("resize"));
     }
   });
 
   return (
-    <div>
-      <div style={{ padding: "10px 20px" }}>
-        <div>
-          DOT TYPE:
-          {DOT_TYPES.map(type => (
-            <Radio
-              value={type}
-              key={type}
-              checked={dotType === type}
-              onChange={evt => setDotType(evt.currentTarget.value)}
-            >
-              {type}
-            </Radio>
-          ))}
-        </div>
+    <div style={{ display: "flex" }}>
+      <div style={{ padding: "10px 20px", flex: 1, minWidth: 500 }}>
         <div>
           DOT SIZE: {pixelSize}
           <Slider
@@ -109,14 +87,16 @@ const App = () => {
         </div>
         <div>
           DOT SIZE MULTIPLIER: {dotSizeMutliplier}
-          <Slider
-            value={dotSizeMutliplier}
-            min={0.1}
-            max={2}
-            discrete
-            step={0.01}
-            onInput={evt => setDotSizeMutliplier(evt.detail.value)}
-          />
+          <div>
+            <Slider
+              value={dotSizeMutliplier}
+              min={0.1}
+              max={2}
+              discrete
+              step={0.01}
+              onInput={evt => setDotSizeMutliplier(evt.detail.value)}
+            />
+          </div>
         </div>
       </div>
       <canvas
