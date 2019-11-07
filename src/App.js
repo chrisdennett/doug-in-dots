@@ -15,9 +15,8 @@ const DOT_COLOUR_OPTIONS = [
 
 const App = () => {
   const [sourceImg, setSourceImg] = useState(null);
-  const [dotSize, setDotSize] = useState(4);
-  const [totalDotSizes, setTotalDotSizes] = useState(50);
-  const [dotColourOption, setDotColourOption] = useState(DOT_COLOUR_OPTIONS[0]);
+  const [pixelSize, setPixelSize] = useState(10);
+  const [totalDotSizes, setTotalDotSizes] = useState(16);
   const [totalPixels, setTotalPixels] = useState(100);
   const [dotSizeMutliplier, setDotSizeMutliplier] = useState(1.3);
   const [dotType, setDotType] = useState(DOT_TYPES[0]);
@@ -39,14 +38,19 @@ const App = () => {
         totalPixels,
         totalPixels
       );
-      const dotCanvas = createBlockCanvas(
-        smallCanvas,
-        dotSize,
-        dotType,
-        dotColourOption,
-        totalDotSizes,
+
+      const dotData = createDotData({
+        inputCanvas: smallCanvas,
+        totalDotSizes
+      });
+
+      const dotCanvas = createDotCanvas({
+        dotData,
+        pixelSize: pixelSize,
+        inputCanvas: smallCanvas,
         dotSizeMutliplier
-      );
+      });
+
       const ctx = canvasRef.current.getContext("2d");
       canvasRef.current.width = dotCanvas.width;
       canvasRef.current.height = dotCanvas.height;
@@ -71,27 +75,14 @@ const App = () => {
           ))}
         </div>
         <div>
-          BG / DOT COLOURS:
-          {DOT_COLOUR_OPTIONS.map(colourOption => (
-            <Radio
-              value={colourOption}
-              key={colourOption}
-              checked={dotColourOption === colourOption}
-              onChange={evt => setDotColourOption(evt.currentTarget.value)}
-            >
-              {colourOption}
-            </Radio>
-          ))}
-        </div>
-        <div>
-          DOT SIZE: {dotSize}
+          DOT SIZE: {pixelSize}
           <Slider
-            value={dotSize}
+            value={pixelSize}
             min={1}
             max={60}
             discrete
             step={1}
-            onInput={evt => setDotSize(evt.detail.value)}
+            onInput={evt => setPixelSize(evt.detail.value)}
           />
         </div>
         <div>
@@ -172,150 +163,64 @@ const createSmallCanvas = (source, maxWidth, maxHeight) => {
   return smallCanvas;
 };
 
-const createBlockCanvas = (
+const createDotCanvas = ({
+  dotData,
+  pixelSize,
   inputCanvas,
-  dotSize,
-  dotType,
-  dotColourOption,
-  totalDotSizes,
   dotSizeMutliplier
-) => {
+}) => {
   const { width: inputW, height: inputH } = inputCanvas;
 
-  const blockSize = dotSize;
   const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = inputW * blockSize;
-  outputCanvas.height = inputH * blockSize;
+  outputCanvas.width = inputW * pixelSize;
+  outputCanvas.height = inputH * pixelSize;
   const outputCtx = outputCanvas.getContext("2d");
 
-  const inputCtx = inputCanvas.getContext("2d");
-  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
-  let pixels = imgData.data;
+  const halfPixelSize = pixelSize / 2;
 
-  let r, g, b, grey;
+  dotData.forEach(dot => {
+    const x = dot.xIndex * pixelSize + halfPixelSize;
+    const y = dot.yIndex * pixelSize + halfPixelSize;
 
-  const fractionBandSize = getFractionBand(totalDotSizes);
-
-  for (let y = 0; y < inputH; y++) {
-    for (let x = 0; x < inputW; x++) {
-      const i = (y * inputW + x) * 4;
-
-      r = pixels[i];
-      g = pixels[i + 1];
-      b = pixels[i + 2];
-
-      //grey = (r + g + b) / 3;
-      grey = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-      const halfBlock = blockSize / 2;
-      const xPos = x * blockSize + halfBlock;
-      const yPos = y * blockSize + halfBlock;
-
-      drawDot({
-        type: dotType,
-        brightness: grey,
-        colourOption: dotColourOption,
-        blockSize,
-        x: xPos,
-        y: yPos,
-        context: outputCtx,
-        fractionBandSize,
-        dotSizeMutliplier
-      });
-    }
-  }
+    drawDot({
+      pixelSize,
+      x,
+      y,
+      fractionSize: dot.fractionSize,
+      context: outputCtx,
+      dotSizeMutliplier
+    });
+  });
 
   return outputCanvas;
 };
 
 const drawDot = ({
-  type,
-  colourOption,
-  brightness,
-  blockSize,
+  pixelSize,
   x,
   y,
+  fractionSize,
   context,
-  fractionBandSize,
   dotSizeMutliplier
 }) => {
-  let bgColour, dotColour, dotSizeAsFraction;
+  let bgColour, dotColour;
 
-  const darknessAsFraction = brightness / 255;
-  const lightnessAsFraction = 1 - darknessAsFraction;
+  bgColour = "#FFF";
+  dotColour = "#000";
 
-  if (colourOption === "black-on-white") {
-    dotSizeAsFraction = lightnessAsFraction;
-    bgColour = "#FFF";
-    dotColour = "#000";
-  } else if (colourOption === "grey-on-white") {
-    dotSizeAsFraction = lightnessAsFraction;
-    bgColour = "#FFF";
-    dotColour = "#ddd";
-  } else if (colourOption === "white-on-black") {
-    dotSizeAsFraction = darknessAsFraction;
-    bgColour = "#000";
-    dotColour = "#FFF";
-  } else if (colourOption === "random-on-white") {
-    dotSizeAsFraction = lightnessAsFraction;
-    bgColour = "#FFF";
-
-    const h = Math.random() * 100;
-    const s = 80;
-    const l = 20;
-
-    dotColour = `hsl(${h}, ${s}%, ${l}%)`;
-  }
-
-  const restrictedDotSizeFraction = getRestrictedValue(
-    dotSizeAsFraction,
-    fractionBandSize
-  );
-
-  let dotSize = blockSize * restrictedDotSizeFraction * dotSizeMutliplier;
+  let dotSize = pixelSize * fractionSize * dotSizeMutliplier;
 
   // draw background
   context.fillStyle = bgColour;
   context.beginPath();
-  context.rect(x, y, blockSize, blockSize);
+  context.rect(x, y, pixelSize, pixelSize);
   context.fill();
-  const halfBlockSize = blockSize * 0.5;
   const halfDotSize = dotSize * 0.5;
-  const middleX = x + halfBlockSize;
-  const middleY = y + halfBlockSize;
 
-  if (type === "round") {
-    context.fillStyle = dotColour;
-    context.beginPath();
-    context.arc(x, y, dotSize / 2, 0, 2 * Math.PI);
-    context.fill();
-  } else if (type === "square") {
-    context.fillStyle = dotColour;
-    context.beginPath();
-    context.rect(x, y, dotSize, dotSize);
-    context.fill();
-  } else if (type === "ring") {
-    context.fillStyle = "#fff";
-    context.strokeStyle = dotColour;
-    context.beginPath();
-    context.arc(x, y, dotSize / 2, 0, 2 * Math.PI);
-    context.stroke();
-    context.fill();
-  } else if (type === "triangle2") {
-    context.fillStyle = dotColour;
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x + dotSize, y + dotSize);
-    context.lineTo(x, y + dotSize);
-    context.fill();
-  } else if (type === "triangle") {
-    context.fillStyle = dotColour;
-    context.beginPath();
-    context.moveTo(middleX, middleY - halfDotSize);
-    context.lineTo(middleX + halfDotSize, middleY + halfDotSize);
-    context.lineTo(middleX - halfDotSize, middleY + halfDotSize);
-    context.fill();
-  }
+  context.fillStyle = dotColour;
+  context.beginPath();
+  context.arc(x, y, halfDotSize, 0, 2 * Math.PI);
+  context.fill();
 };
 
 const getFractionBand = (totalFactions = 10) => {
@@ -324,4 +229,43 @@ const getFractionBand = (totalFactions = 10) => {
 
 const getRestrictedValue = (value, fractionBandSize) => {
   return Math.round(value / fractionBandSize) * fractionBandSize;
+};
+
+const createDotData = ({ inputCanvas, totalDotSizes = 255 }) => {
+  const { width: inputW, height: inputH } = inputCanvas;
+
+  const fractionBandSize = getFractionBand(totalDotSizes);
+
+  const inputCtx = inputCanvas.getContext("2d");
+  let imgData = inputCtx.getImageData(0, 0, inputW, inputH);
+  let pixels = imgData.data;
+
+  const dotData = [];
+
+  for (let y = 0; y < inputH; y++) {
+    for (let x = 0; x < inputW; x++) {
+      const i = (y * inputW + x) * 4;
+
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+
+      //grey = (r + g + b) / 3;
+      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+
+      const rawFractionSize = 1 - brightness / 255;
+      const fractionSize = getRestrictedValue(
+        rawFractionSize,
+        fractionBandSize
+      );
+
+      dotData.push({
+        fractionSize,
+        xIndex: x,
+        yIndex: y
+      });
+    }
+  }
+
+  return dotData;
 };
