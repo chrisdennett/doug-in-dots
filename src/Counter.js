@@ -17,7 +17,9 @@ const Counter = ({ value = 1, setValue, min = 1, max = 10 }) => {
         icon={"navigate_before"}
         label="subtract"
       />
-      <ValueStyled>{value}</ValueStyled>
+      <ValueStyled>
+        {value} of {max}
+      </ValueStyled>
       <IconButton
         onClick={() => updateValue(value + 1)}
         icon={"navigate_next"}
