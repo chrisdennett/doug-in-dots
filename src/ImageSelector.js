@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
-const ImageSelector = () => {
+const ImageSelector = ({ onChange }) => {
   const canvasRef = React.createRef();
   const [sourceImg, setSourceImg] = useState(null);
 
@@ -14,6 +14,8 @@ const ImageSelector = () => {
       };
       image.src = "don-t-panic.jpg";
       copyToCanvas(image, canvasRef.current, false);
+
+      onChange(canvasRef.current);
     }
   });
 
@@ -29,6 +31,8 @@ const ImageSelector = () => {
 
       createCanvasFromFile(imgFile, canvas => {
         copyToCanvas(canvas, canvasRef.current, false);
+
+        onChange(canvasRef.current);
       });
     }
   };

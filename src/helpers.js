@@ -1,3 +1,5 @@
+import { drawDot, drawImageDot } from "./DotDrawer";
+
 //
 // converts source canvas into an array of dot data
 export const createDotData = ({ sourcePixelCanvas, totalDotSizes = 255 }) => {
@@ -140,6 +142,7 @@ export const createSheetData = ({
 // uses the dot data to create a single canvas
 export const createDotCanvas = ({
   dots,
+  dotImages,
   dotsWide,
   dotsHigh,
   pixelSizeInMm,
@@ -153,13 +156,15 @@ export const createDotCanvas = ({
   const outputCtx = outputCanvas.getContext("2d");
 
   const halfPixelSize = pixelSize / 2;
+  const dotImage = dotImages[0];
 
   dots.forEach(dot => {
     const x = dot.xIndex * pixelSize + halfPixelSize;
     const y = dot.yIndex * pixelSize + halfPixelSize;
 
-    drawDot({
+    drawImageDot({
       pixelSize,
+      dotImage,
       x,
       y,
       fractionSize: dot.fractionSize,
@@ -202,34 +207,6 @@ export const createSmallCanvas = (source, maxWidth, maxHeight) => {
   ctx.drawImage(source, 0, 0, sourceW, sourceH, 0, 0, targetW, targetH);
 
   return smallCanvas;
-};
-
-const drawDot = ({
-  pixelSize,
-  x,
-  y,
-  fractionSize,
-  context,
-  dotSizeMutliplier
-}) => {
-  let bgColour, dotColour;
-
-  bgColour = "#FFF";
-  dotColour = "#000";
-
-  let dotSize = pixelSize * fractionSize * dotSizeMutliplier;
-
-  // draw background
-  context.fillStyle = bgColour;
-  context.beginPath();
-  context.rect(x, y, pixelSize, pixelSize);
-  context.fill();
-  const halfDotSize = dotSize * 0.5;
-
-  context.fillStyle = dotColour;
-  context.beginPath();
-  context.arc(x, y, halfDotSize, 0, 2 * Math.PI);
-  context.fill();
 };
 
 const getFractionBand = (totalFactions = 10) => {

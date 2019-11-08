@@ -18,6 +18,7 @@ import ImageSelector from "./ImageSelector";
 const App = () => {
   const [showSheets, setShowSheets] = useState(true);
   const [sourceImg, setSourceImg] = useState(null);
+  const [dotImage, setDotImage] = useState(null);
   const [currentSheetIndex, setCurrentSheetIndex] = useState(0);
   const [totalSheets, setTotalSheets] = useState(1);
   const [pixelSizeInMm, setPixelSizeInMm] = useState(10);
@@ -57,6 +58,7 @@ const App = () => {
 
         canvasToshow = createDotCanvas({
           dots: sheet.sheetDots,
+          dotImages: [dotImage],
           dotsWide: sheetData.pixelsPerSheetWidth,
           dotsHigh: sheetData.pixelsPerSheetHeight,
           pixelSizeInMm,
@@ -65,6 +67,7 @@ const App = () => {
       } else {
         canvasToshow = createDotCanvas({
           dots: dotData.dots,
+          dotImages: [dotImage],
           dotsWide: dotData.dotsWide,
           dotsHigh: dotData.dotsHigh,
           pixelSizeInMm,
@@ -81,6 +84,7 @@ const App = () => {
       window.dispatchEvent(new Event("resize"));
     }
   }, [
+    dotImage,
     showSheets,
     sourceImg,
     currentSheetIndex,
@@ -95,7 +99,7 @@ const App = () => {
       <SidebarStyled>
         <ControlsHolderStyled>
           <div>
-            <ImageSelector />
+            <ImageSelector onChange={dotCanvas => setDotImage(dotCanvas)} />
           </div>
 
           <div>
