@@ -12,7 +12,7 @@ const ImageSelector = ({ onChange }) => {
       image.onload = () => {
         setSourceImg(image);
       };
-      image.src = "don-t-panic.jpg";
+      image.src = "don-t-panic-2.jpg";
       copyToCanvas(image, canvasRef.current, false);
 
       onChange(canvasRef.current);

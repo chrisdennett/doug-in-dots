@@ -50,18 +50,35 @@ export const drawImageDot = ({
   context.fill();
   context.closePath();
 
+  let imgX = x;
+  let imgY = y;
+
+  if (dotSize > pixelSize) {
+    const clippedSize = dotSize - pixelSize;
+    const halfClippedSize = clippedSize * 0.5;
+
+    imgX = x - halfClippedSize;
+    imgY = y - halfClippedSize;
+  }
+
   // add a circle path to act as a clipping path
   const halfDotSize = dotSize * 0.5;
   context.fillStyle = dotColour;
   context.beginPath();
-  context.arc(x + halfDotSize, y + halfDotSize, halfDotSize, 0, 2 * Math.PI);
+  context.arc(
+    imgX + halfDotSize,
+    imgY + halfDotSize,
+    halfDotSize,
+    0,
+    2 * Math.PI
+  );
   context.closePath();
 
   // set as clip
   context.clip();
 
   // add the image to be clipped
-  context.drawImage(dotImage, x, y, dotSize, dotSize);
+  context.drawImage(dotImage, imgX, imgY, dotSize, dotSize);
 
   context.restore();
 };
