@@ -21,7 +21,7 @@ const App = () => {
   const [dotImage, setDotImage] = useState(null);
   const [currentSheetIndex, setCurrentSheetIndex] = useState(0);
   const [totalSheets, setTotalSheets] = useState(1);
-  const [pixelSizeInMm, setPixelSizeInMm] = useState(10);
+  const [pixelSizeInMm, setPixelSizeInMm] = useState(20);
   const [totalDotSizes, setTotalDotSizes] = useState(16);
   const [totalPixels, setTotalPixels] = useState(88);
   const [dotSizeMutliplier, setDotSizeMutliplier] = useState(1.3);

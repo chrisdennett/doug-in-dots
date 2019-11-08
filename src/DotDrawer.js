@@ -43,6 +43,7 @@ export const drawImageDot = ({
   let dotSize = pixelSize * fractionSize * dotSizeMutliplier;
 
   context.save();
+
   // draw background
   context.fillStyle = bgColour;
   context.beginPath();
@@ -77,8 +78,39 @@ export const drawImageDot = ({
   // set as clip
   context.clip();
 
-  // add the image to be clipped
-  context.drawImage(dotImage, imgX, imgY, dotSize, dotSize);
+  const imgAngle = Math.random() * 360;
+
+  rotateAndPaintImage(
+    context,
+    dotImage,
+    imgAngle,
+    imgX + halfDotSize,
+    imgY + halfDotSize,
+    halfDotSize,
+    halfDotSize,
+    dotSize
+  );
+  // context.drawImage(dotImage, imgX, imgY, dotSize, dotSize);
 
   context.restore();
+  // add the image to be clipped
+};
+
+const rotateAndPaintImage = (
+  context,
+  image,
+  angleInDegress,
+  positionX,
+  positionY,
+  axisX,
+  axisY,
+  size
+) => {
+  const angleInRad = (angleInDegress * Math.PI) / 180;
+
+  context.translate(positionX, positionY);
+  context.rotate(angleInRad);
+  context.drawImage(image, -axisX, -axisY, size, size);
+  context.rotate(-angleInRad);
+  context.translate(-positionX, -positionY);
 };

@@ -1,4 +1,4 @@
-import { drawDot, drawImageDot } from "./DotDrawer";
+import { drawImageDot } from "./DotDrawer";
 
 //
 // converts source canvas into an array of dot data
@@ -157,6 +157,8 @@ export const createDotCanvas = ({
 
   const halfPixelSize = pixelSize / 2;
   const dotImage = dotImages[0];
+
+  outputCtx.globalCompositeOperation = "darken";
 
   dots.forEach(dot => {
     const x = dot.xIndex * pixelSize + halfPixelSize;
