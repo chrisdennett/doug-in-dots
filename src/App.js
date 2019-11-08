@@ -13,9 +13,10 @@ import {
   createSheetData
 } from "./helpers";
 import Counter from "./Counter";
+import ImageSelector from "./ImageSelector";
 
 const App = () => {
-  const [showSheets, setShowSheets] = useState(false);
+  const [showSheets, setShowSheets] = useState(true);
   const [sourceImg, setSourceImg] = useState(null);
   const [currentSheetIndex, setCurrentSheetIndex] = useState(0);
   const [totalSheets, setTotalSheets] = useState(1);
@@ -94,6 +95,10 @@ const App = () => {
       <SidebarStyled>
         <ControlsHolderStyled>
           <div>
+            <ImageSelector />
+          </div>
+
+          <div>
             <Radio checked={showSheets} onChange={e => setShowSheets(true)}>
               Show sheets
             </Radio>
@@ -127,7 +132,8 @@ const App = () => {
           </div>
 
           <div>
-            SMALL CANVAS SIZE: {totalPixels}
+            PIXEL SIZE: {totalPixels} (size of largest dimension - width or
+            height)
             <Slider
               value={totalPixels}
               min={10}
@@ -139,7 +145,7 @@ const App = () => {
           </div>
 
           <div>
-            TOTAL DOT SIZES: {totalDotSizes}
+            ALLOWED DOT SIZES: {totalDotSizes} (number of different dot sizes)
             <Slider
               value={totalDotSizes}
               min={2}
@@ -151,7 +157,8 @@ const App = () => {
           </div>
 
           <div>
-            DOT SIZE MULTIPLIER: {dotSizeMutliplier}
+            DOT SIZE MULTIPLIER: {dotSizeMutliplier} (allows dot to overlap edge
+            of square pixel)
             <div>
               <Slider
                 value={dotSizeMutliplier}
@@ -187,7 +194,7 @@ const SidebarStyled = styled.div`
   border: green 1px solid;
   flex: 1;
   min-width: 500px;
-  overflow-y: scroll;
+  overflow-y: auto;
 `;
 
 const ControlsHolderStyled = styled.div`
@@ -195,7 +202,7 @@ const ControlsHolderStyled = styled.div`
 `;
 
 const CanvasHolderStyled = styled.div`
-  overflow-y: scroll;
+  overflow-y: auto;
   border: blue 1px solid;
 `;
 
