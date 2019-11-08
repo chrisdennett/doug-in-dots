@@ -1,8 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
 const ImageSelector = () => {
   const canvasRef = React.createRef();
+  const [sourceImg, setSourceImg] = useState(null);
+
+  useEffect(() => {
+    if (!sourceImg) {
+      const image = new Image();
+      image.crossOrigin = "Anonymous";
+      image.onload = () => {
+        setSourceImg(image);
+      };
+      image.src = "don-t-panic.jpg";
+      copyToCanvas(image, canvasRef.current, false);
+    }
+  });
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -15,7 +28,7 @@ const ImageSelector = () => {
       const imgFile = e.target.files[0];
 
       createCanvasFromFile(imgFile, canvas => {
-        copyToCanvas(canvas, canvasRef.current);
+        copyToCanvas(canvas, canvasRef.current, false);
       });
     }
   };
@@ -26,7 +39,7 @@ const ImageSelector = () => {
         <input type={"file"} onChange={handleImageChange} />
         <input type="submit" value="ADD DOT" />
       </form>
-      <canvas ref={canvasRef} width={300} height={300} />
+      <canvas ref={canvasRef} width={100} height={100} />
     </ImageSelectorHolder>
   );
 };
@@ -52,7 +65,6 @@ const createCanvasFromFile = (file, callback) => {
   });
 };
 
-// WORKING
 const getImage = (imgFile, callback) => {
   getPhotoOrientation(imgFile, orientation => {
     const reader = new FileReader();
